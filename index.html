@@ -3,6 +3,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="robots" content="noindex,nofollow">
 <meta name="theme-color" content="#D23F69">
+<script>try{var t=localStorage.getItem('andrea:theme')||'light';if(t!=='auto')document.documentElement.setAttribute('data-theme',t)}catch(e){document.documentElement.setAttribute('data-theme','light')}</script>
 <link rel="manifest" href="manifest.json">
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-192.png">
@@ -186,6 +187,11 @@ button.c{all:unset;cursor:pointer;box-sizing:border-box}
 .pill{font-size:13px;font-weight:800;padding:4px 10px;border-radius:99px;background:var(--soft);color:var(--accent);font-variant-numeric:tabular-nums}
 .pill.g{background:var(--done-soft);color:var(--done)}
 @media (prefers-reduced-motion:reduce){.win{animation:none}}
+.themerow{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.seg{display:flex;background:var(--bg);border-radius:12px;padding:3px;gap:2px}
+.seg button{all:unset;cursor:pointer;padding:7px 12px;border-radius:9px;font-weight:800;font-size:13px;color:var(--mute)}
+.seg button[aria-checked=true]{background:var(--card);color:var(--accent);box-shadow:var(--shadow)}
+.seg button:focus-visible{outline:2px solid var(--accent)}
 .win.almost{background:var(--gold);color:#2A1C22}
 .win>div{flex:1;min-width:0}
 .win .btn{margin-top:10px;background:var(--card);color:var(--done);padding:10px 16px}
@@ -385,6 +391,16 @@ button.c{all:unset;cursor:pointer;box-sizing:border-box}
     <h2>Pesées</h2>
     <div class="hist" id="hist"></div>
     <div class="note" id="nohist">Pas encore de pesée.</div>
+  </div>
+
+  <div class="card">
+    <div class="themerow"><span class="eyebrow">Apparence</span>
+      <div class="seg" role="radiogroup" aria-label="Apparence">
+        <button type="button" role="radio" data-th="light">Clair</button>
+        <button type="button" role="radio" data-th="dark">Sombre</button>
+        <button type="button" role="radio" data-th="auto">Auto</button>
+      </div>
+    </div>
   </div>
 
   <div class="card">
@@ -692,6 +708,14 @@ $('bk-restore').addEventListener('click',()=>{
 });
 
 /* ---------- tabs ---------- */
+function applyTheme(t){
+  const r=document.documentElement;if(t==='auto')r.removeAttribute('data-theme');else r.setAttribute('data-theme',t);
+  try{localStorage.setItem('andrea:theme',t)}catch(e){}
+  document.querySelectorAll('[data-th]').forEach(b=>b.setAttribute('aria-checked',b.dataset.th===t));
+}
+let THEME='light';try{THEME=localStorage.getItem('andrea:theme')||'light'}catch(e){}
+applyTheme(THEME);
+document.querySelectorAll('[data-th]').forEach(b=>b.addEventListener('click',()=>applyTheme(b.dataset.th)));
 const TABS=['jour','astuces','courses','suivi','cadeaux'];
 function show(t){TABS.forEach(x=>{$('v-'+x).hidden=x!==t;$('t-'+x).setAttribute('aria-selected',x===t)});
   if(t==='suivi')renderSuivi();if(t==='cadeaux')renderCadeaux();try{localStorage.setItem('andrea:tab',t)}catch(e){}window.scrollTo(0,0)}
