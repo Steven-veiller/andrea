@@ -396,19 +396,16 @@ button.c{all:unset;cursor:pointer;box-sizing:border-box}
   </div>
 
   <div class="card" id="synccard">
-    <div class="themerow"><h2>Sauvegarde en ligne</h2><span class="pill" id="syncst">…</span></div>
-    <div class="note">Tes cases, ton poids, tes photos et tes gages sont enregistrés en ligne. Pour ouvrir l'app sur un autre téléphone ou un autre navigateur, utilise ton lien perso : tu retrouves tout.</div>
-    <input type="text" id="synclink" readonly aria-label="Ton lien perso">
-    <div class="btns">
-      <a class="btn wa" id="syncwa" href="#" target="_blank" rel="noopener"><svg><use href="#i-wa"/></svg>Me l'envoyer</a>
-      <button class="btn ghost" id="synccopy" type="button"><svg><use href="#i-copy"/></svg>Copier</button>
-    </div>
-    <details>
-      <summary class="note" style="font-weight:800">J'ai déjà un lien perso</summary>
-      <div class="row"><input type="text" id="syncin" placeholder="Colle ton lien perso ici"><button class="btn" id="syncgo" type="button">Récupérer</button></div>
-      <div class="note">Attention : ça remplace ce qu'il y a sur ce téléphone par ce qui est enregistré en ligne.</div>
-    </details>
-    <div class="toast" id="syncmsg" hidden></div>
+    <div class="themerow"><h2>Sauvegarde</h2><span class="pill" id="syncst">…</span></div>
+    <div class="note">Tout est enregistré en ligne automatiquement. Ouvre l'app avec le même lien sur n'importe quel téléphone, tu retrouves tout.</div>
+  </div>
+
+  <div class="card" id="setupcard" hidden>
+    <h2>Mise en place</h2>
+    <div class="note">À faire une seule fois : crée l'espace en ligne, puis envoie le code à Claude.</div>
+    <button class="btn" id="setupgo" type="button">Créer l'espace en ligne</button>
+    <input type="text" id="setupid" readonly hidden aria-label="Code">
+    <div class="toast" id="setupmsg" hidden></div>
   </div>
 
   <div class="card">
@@ -829,37 +826,22 @@ document.addEventListener('click',e=>{
 /* téléchargement */
 let downloads=true,curView=null;
 
-/* ---------- sauvegarde en ligne (jsonblob) ---------- */
+/* ---------- sauvegarde en ligne automatique ---------- */
+const SHARED_ID='';
 const API='https://jsonblob.com/api/jsonBlob';
 const SYNC_KEYS={days:1,w:1,base:1,ex:1,ph:1,cp:1};
 const raw={get(k){try{return localStorage.getItem('andrea:'+k)}catch(e){return null}},set(k,v){try{localStorage.setItem('andrea:'+k,v)}catch(e){}}};
-let syncId=raw.get('sync'),localV=+(raw.get('v')||0),applying=false,pushT=null,pushing=false,again=false;
-const myLink=()=>location.origin+location.pathname+(syncId?'#'+syncId:'');
+let localV=+(raw.get('v')||0),applying=false,pushT=null,pushing=false,again=false;
 function setSt(t,ok){const e=$('syncst');e.textContent=t;e.className='pill'+(ok?' g':'')}
-function renderSync(){
-  $('synclink').value=syncId?myLink():'Ton lien apparaîtra dès la première case cochée';
-  $('syncwa').href='https://wa.me/?text='+encodeURIComponent('Mon lien perso pour l’app 6 cases : '+myLink());
-  $('syncwa').hidden=$('synccopy').hidden=!syncId;
-}
 const snapshot=()=>({days,weights,base,extras,unlocked,coupons,v:localV});
 const _set=LS.set;
 LS.set=function(k,v){_set.call(LS,k,v);if(!applying&&SYNC_KEYS[k]){localV=Date.now();raw.set('v',localV);schedulePush()}};
-function schedulePush(){clearTimeout(pushT);setSt('Enregistrement…');pushT=setTimeout(push,1200)}
-async function create(){
-  const r=await fetch(API,{method:'POST',headers:{'Content-Type':'application/json','Accept':'application/json'},body:JSON.stringify(snapshot())});
-  if(!r.ok)throw new Error('create '+r.status);
-  const loc=r.headers.get('Location')||r.headers.get('location')||'';const xid=r.headers.get('X-jsonblob-id')||r.headers.get('X-jsonblob')||'';
-  const id=xid||loc.split('/').filter(Boolean).pop();if(!id||!/^[A-Za-z0-9-]{6,}$/.test(id))throw new Error('no id');
-  syncId=id;raw.set('sync',id);renderSync();
-}
+function schedulePush(){if(!SHARED_ID){setSt('Sur ce téléphone');return}clearTimeout(pushT);setSt('Enregistrement…');pushT=setTimeout(push,1200)}
 async function push(){
-  if(pushing){again=true;return}pushing=true;
-  try{
-    if(!syncId)await create();
-    else{const r=await fetch(API+'/'+syncId,{method:'PUT',headers:{'Content-Type':'application/json','Accept':'application/json'},body:JSON.stringify(snapshot())});
-      if(r.status===404){syncId=null;await create()}else if(!r.ok)throw new Error('put '+r.status)}
-    setSt('Enregistré en ligne ✓',true);
-  }catch(e){setSt(navigator.onLine===false?'Hors ligne, réessai plus tard':'Pas encore en ligne')}
+  if(!SHARED_ID)return;if(pushing){again=true;return}pushing=true;
+  try{const r=await fetch(API+'/'+SHARED_ID,{method:'PUT',headers:{'Content-Type':'application/json','Accept':'application/json'},body:JSON.stringify(snapshot())});
+    if(!r.ok)throw 0;setSt('Enregistré en ligne ✓',true)}
+  catch(e){setSt('Hors ligne, réessai plus tard')}
   pushing=false;if(again){again=false;push()}
 }
 function applyRemote(o){
@@ -869,27 +851,28 @@ function applyRemote(o){
   localV=+o.v||0;raw.set('v',localV);applying=false;
   renderAll();if(!$('v-cadeaux').hidden)renderCadeaux();
 }
-async function pull(force){
-  if(!syncId){renderSync();setSt(localV?'Pas encore en ligne':'Rien à enregistrer');if(localV)schedulePush();return}
-  try{const r=await fetch(API+'/'+syncId,{headers:{'Accept':'application/json'},cache:'no-store'});
-    if(r.status===404){if(force){$('syncmsg').hidden=false;$('syncmsg').textContent='Ce lien perso n’existe pas ou plus.'}else{syncId=null;schedulePush()}return}
-    if(!r.ok)throw 0;const o=await r.json();
-    if(force||(+o.v||0)>localV){applyRemote(o);setSt('Enregistré en ligne ✓',true)}
-    else if(localV>(+o.v||0))schedulePush();else setSt('Enregistré en ligne ✓',true);
+async function pull(){
+  if(!SHARED_ID){setSt('Sur ce téléphone');return}
+  try{const r=await fetch(API+'/'+SHARED_ID,{headers:{'Accept':'application/json'},cache:'no-store'});
+    if(!r.ok)throw 0;const o=await r.json();const rv=+o.v||0;
+    if(rv>localV)applyRemote(o);else if(localV>rv){schedulePush();return}
+    setSt('Enregistré en ligne ✓',true);
   }catch(e){setSt('Hors ligne, réessai plus tard')}
 }
-function idFrom(t){const m=String(t).trim().match(/#([A-Za-z0-9-]{6,})\s*$/)||String(t).trim().match(/^([A-Za-z0-9-]{6,})$/);return m?m[1]:null}
-(function(){const h=idFrom(location.hash);
-  if(h){if(h!==syncId){syncId=h;raw.set('sync',h);localV=0;raw.set('v',0);pull(true)}else pull(false);try{history.replaceState(null,'',location.pathname)}catch(e){}}
-  else pull(false);
-  renderSync();
-})();
-document.addEventListener('visibilitychange',()=>{if(!document.hidden)pull(false)});
-$('synccopy').addEventListener('click',()=>{try{navigator.clipboard.writeText(myLink()).then(()=>{$('synccopy').lastChild.textContent='Copié'},()=>$('synclink').select())}catch(e){$('synclink').select()}});
-$('synclink').addEventListener('focus',e=>e.target.select());
-$('syncgo').addEventListener('click',()=>{const id=idFrom($('syncin').value);const m=$('syncmsg');m.hidden=false;
-  if(!id){m.textContent='Ce n’est pas un lien perso valide. Colle le lien complet qui finit par #…';return}
-  syncId=id;raw.set('sync',id);$('syncin').value='';m.textContent='Récupération…';pull(true).then(()=>{renderSync();if(m.textContent==='Récupération…')m.textContent='Tes données sont récupérées.'})});
+pull();
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)pull()});
+/* mise en place (une seule fois, lien #setup) */
+if(location.hash==='#setup'&&!SHARED_ID){$('setupcard').hidden=false;setTimeout(()=>show('suivi'),0)}
+$('setupgo').addEventListener('click',async()=>{
+  const m=$('setupmsg');m.hidden=false;m.textContent='Création…';
+  try{const r=await fetch(API,{method:'POST',headers:{'Content-Type':'application/json','Accept':'application/json'},body:JSON.stringify({v:0})});
+    const loc=r.headers.get('Location')||'',xid=r.headers.get('X-jsonblob-id')||r.headers.get('X-jsonblob')||'';
+    const id=xid||loc.split('/').filter(Boolean).pop()||'';
+    if(!r.ok||!id){m.textContent='Échec ('+r.status+', aucun code reçu). Dis-le à Claude.';return}
+    $('setupid').value=id;$('setupid').hidden=false;$('setupid').select();
+    m.textContent='Espace créé. Copie ce code et envoie-le à Claude.';
+  }catch(e){m.textContent='Échec : '+(e&&e.message||'erreur réseau')+'. Dis-le à Claude.'}
+});
 
 function renderAll(){TODAY=key(new Date());renderToday();renderShop();renderSuivi()}
 document.addEventListener('visibilitychange',()=>{if(!document.hidden&&key(new Date())!==TODAY)renderAll()});
