@@ -819,7 +819,7 @@ document.addEventListener('click',e=>{
 let downloads=true,curView=null;
 
 /* ---------- sauvegarde en ligne automatique (Google Apps Script) ---------- */
-const SYNC_URL='';
+const SYNC_URL='https://script.google.com/macros/s/AKfycbycf7cNXk5wUFIzhpfE0UUOxVf71WAn52JcMVF4u1wrFUSSHdYjzu3JJ0uljdO7c0Naew/exec';
 const SYNC_KEYS={days:1,w:1,base:1,ex:1,ph:1,cp:1};
 const raw={get(k){try{return localStorage.getItem('andrea:'+k)}catch(e){return null}},set(k,v){try{localStorage.setItem('andrea:'+k,v)}catch(e){}}};
 let localV=+(raw.get('v')||0),applying=false,pushT=null,pushing=false,again=false;
