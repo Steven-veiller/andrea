@@ -3,7 +3,8 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="robots" content="noindex,nofollow">
 <meta name="theme-color" content="#D23F69">
-<script>try{var t=localStorage.getItem('andrea:theme')||'light';if(t!=='auto')document.documentElement.setAttribute('data-theme',t)}catch(e){document.documentElement.setAttribute('data-theme','light')}</script>
+<meta name="color-scheme" content="only light" id="cs">
+<script>var t='light';try{t=localStorage.getItem('andrea:theme')||'light'}catch(e){}if(t!=='auto')document.documentElement.setAttribute('data-theme',t);document.getElementById('cs').content=t==='light'?'only light':(t==='dark'?'dark':'light dark');</script>
 <link rel="manifest" href="manifest.json">
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-192.png">
@@ -187,6 +188,7 @@ button.c{all:unset;cursor:pointer;box-sizing:border-box}
 .pill{font-size:13px;font-weight:800;padding:4px 10px;border-radius:99px;background:var(--soft);color:var(--accent);font-variant-numeric:tabular-nums}
 .pill.g{background:var(--done-soft);color:var(--done)}
 @media (prefers-reduced-motion:reduce){.win{animation:none}}
+:root[data-theme="light"]{color-scheme:only light}
 .themerow{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
 .seg{display:flex;background:var(--bg);border-radius:12px;padding:3px;gap:2px}
 .seg button{all:unset;cursor:pointer;padding:7px 12px;border-radius:9px;font-weight:800;font-size:13px;color:var(--mute)}
@@ -725,7 +727,7 @@ $('bk-restore').addEventListener('click',()=>{
 
 /* ---------- tabs ---------- */
 function applyTheme(t){
-  const r=document.documentElement;if(t==='auto')r.removeAttribute('data-theme');else r.setAttribute('data-theme',t);
+  const r=document.documentElement;if(t==='auto')r.removeAttribute('data-theme');else r.setAttribute('data-theme',t);const cs=document.getElementById('cs');if(cs)cs.content=t==='light'?'only light':(t==='dark'?'dark':'light dark');
   try{localStorage.setItem('andrea:theme',t)}catch(e){}
   document.querySelectorAll('[data-th]').forEach(b=>b.setAttribute('aria-checked',b.dataset.th===t));
 }
