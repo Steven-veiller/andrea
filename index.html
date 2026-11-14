@@ -741,6 +741,7 @@ TABS.forEach(t=>$('t-'+t).addEventListener('click',()=>show(t)));
 /* ---------- photos récompenses ---------- */
 let photos=[],unlocked=LS.get('ph',{}),photosReady=false,assets=null;
 const purl=id=>'p/'+id+'.jpg';
+(function(){let ch=false;const u={...unlocked};for(const d in u)if(u[d]==='6ddb9642a010ceb512b325e3'){u[d]='8eed5b0b78444f7bee4498e0';ch=true}if(ch){unlocked=u;LS.set('ph',unlocked)}})();
 function photoFor(d){
   if(unlocked[d])return photos.find(p=>p.asset===unlocked[d])||{asset:unlocked[d]};
   const used=new Set(Object.values(unlocked));const next=photos.find(p=>!used.has(p.asset));
@@ -782,7 +783,7 @@ async function shrink(file){
   }catch(e){return file}
 }
 let photosDb=null;
-photos=[{"id": "e82bfc82a65de90c8c77e4fc", "asset": "e82bfc82a65de90c8c77e4fc"}, {"id": "b2aa57eae879e7c9bb89f0e9", "asset": "b2aa57eae879e7c9bb89f0e9"}, {"id": "350ed38157ad36f7620b3bad", "asset": "350ed38157ad36f7620b3bad"}, {"id": "475ac2f34dac4c43a1000d7e", "asset": "475ac2f34dac4c43a1000d7e"}, {"id": "53166b5eace66006afd8466c", "asset": "53166b5eace66006afd8466c"}, {"id": "0113a37c81862ffe02616137", "asset": "0113a37c81862ffe02616137"}, {"id": "6ddb9642a010ceb512b325e3", "asset": "6ddb9642a010ceb512b325e3"}, {"id": "2426926e0abdaff775cfeb55", "asset": "2426926e0abdaff775cfeb55"}, {"id": "9e8b8634734bac8c53d1f098", "asset": "9e8b8634734bac8c53d1f098"}, {"id": "e8f6c2a92d5ce35b4dcb5e96", "asset": "e8f6c2a92d5ce35b4dcb5e96"}, {"id": "863e9c6278eb40a1a51b54d3", "asset": "863e9c6278eb40a1a51b54d3"}];photosReady=true;
+photos=[{"id": "e82bfc82a65de90c8c77e4fc", "asset": "e82bfc82a65de90c8c77e4fc"}, {"id": "b2aa57eae879e7c9bb89f0e9", "asset": "b2aa57eae879e7c9bb89f0e9"}, {"id": "350ed38157ad36f7620b3bad", "asset": "350ed38157ad36f7620b3bad"}, {"id": "475ac2f34dac4c43a1000d7e", "asset": "475ac2f34dac4c43a1000d7e"}, {"id": "53166b5eace66006afd8466c", "asset": "53166b5eace66006afd8466c"}, {"id": "0113a37c81862ffe02616137", "asset": "0113a37c81862ffe02616137"}, {"id": "8eed5b0b78444f7bee4498e0", "asset": "8eed5b0b78444f7bee4498e0"}, {"id": "2426926e0abdaff775cfeb55", "asset": "2426926e0abdaff775cfeb55"}, {"id": "9e8b8634734bac8c53d1f098", "asset": "9e8b8634734bac8c53d1f098"}, {"id": "e8f6c2a92d5ce35b4dcb5e96", "asset": "e8f6c2a92d5ce35b4dcb5e96"}, {"id": "863e9c6278eb40a1a51b54d3", "asset": "863e9c6278eb40a1a51b54d3"}];photosReady=true;
 
 /* ---------- séries et gages ---------- */
 const DEF_GAGES=['Une grasse matinée : je me lève pour Luna','Un massage de 20 minutes','Un petit-déj au lit','Ton plat préféré à emporter, c\u2019est moi qui régale','Une nuit complète : je m\u2019occupe de Luna','Un après-midi rien que pour toi','Un resto en amoureux','Je fais le ménage tout le week-end'];
