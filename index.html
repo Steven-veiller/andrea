@@ -560,7 +560,7 @@ function dayHTML(d,compact){
     ${xs.length?`<div class="xlist">${xs.map((x,i)=>`<div><span>${esc(x.n)}</span><span>+${x.k} kcal<button data-day="${d}" data-xdel="${i}" aria-label="Retirer">✕</button></span></div>`).join('')}</div>`:''}</div>`;
   return `<div class="list">${cases}</div>${add}`;
 }
-function setDay(d,ch){days={...days,[d]:ch};LS.set('days',days);refresh()}
+function setDay(d,ch){days={...days,[d]:ch};LS.set('days',days);if(d!==TODAY)sweepRewards();refresh()}
 function refresh(){renderToday();if(!$('v-cadeaux').hidden)renderCadeaux();if(selDay)renderDetail();if(!$('v-suivi').hidden)renderSuivi()}
 document.addEventListener('click',e=>{
   const c=e.target.closest('[data-case]');
@@ -585,7 +585,15 @@ function renderDetail(){
   $('dtitle').textContent=dlabel(selDay);
   const n=dayCount(selDay),k=dayKcal(selDay),xs=((days[selDay]||{}).x||[]).length;
   $('dsum').innerHTML=`<span class="pill ${n===6?'g':''}">${n} case${n>1?'s':''} sur 6</span><span class="pill ${k>=2300?'g':''}">≈ ${kfmt(k)} kcal</span>${xs?`<span class="pill">${xs} en plus</span>`:''}${n===6?'<span class="pill g">Journée parfaite ★</span>':''}`;
-  $('dbody').innerHTML=dayHTML(selDay,true);
+  let rw='';
+  if(n===6&&selDay!==TODAY){
+    const ph=unlocked[selDay],cp=coupons.find(c=>c.day===selDay);
+    rw=`<div class="win"><svg><use href="#i-star"/></svg><div><b>Journée parfaite ! Ton étoile est là.</b><span>${ph?'Et voici la photo de cette journée :':'Il n\u2019y a plus de photo en réserve. Demande à ton chéri d\u2019en ajouter !'}</span>`
+      +(ph?`<img src="${purl(ph)}" alt="Ta photo" data-view="${ph}" data-cap="${esc(dlabel(selDay))}">`:'')
+      +(cp?`<div class="ticket" style="margin-top:10px;color:var(--ink)"><span class="tl">Gage · ${cp.mile} jours parfaits</span><span class="tt">${esc(cp.text)}</span><span class="note">Retrouve-le dans Cadeaux.</span></div>`:'')
+      +`</div></div>`;
+  }
+  $('dbody').innerHTML=rw+dayHTML(selDay,true);
 }
 $('dclose').addEventListener('click',()=>{selDay=null;renderDetail();renderSuivi()});
 
@@ -785,13 +793,19 @@ const nextMile=n=>{for(const m of MILES)if(m>n)return m;return (Math.floor(n/30)
 const isPerfect=d=>dayCount(d)===6;
 function streakEnding(d){let s=0,dt=new Date(d+'T12:00');while(isPerfect(key(dt))){s++;dt.setDate(dt.getDate()-1)}return s}
 function currentStreak(){return isPerfect(TODAY)?streakEnding(TODAY):streakEnding(key(ago(1)))}
-function awardToday(){
-  if(!isPerfect(TODAY))return null;
-  const ex=coupons.find(c=>c.day===TODAY);if(ex)return ex;
-  const s=streakEnding(TODAY);if(!isMile(s))return null;
+function awardFor(d){
+  if(!isPerfect(d))return null;
+  const ex=coupons.find(c=>c.day===d);if(ex)return ex;
+  const s=streakEnding(d);if(!isMile(s))return null;
   const list=(gageList&&gageList.length)?gageList:DEF_GAGES;
-  const c={id:'c'+Date.now(),day:TODAY,mile:s,text:list[coupons.length%list.length],used:null};
+  const c={id:'c'+Date.now()+Math.floor(Math.random()*1000),day:d,mile:s,text:list[coupons.length%list.length],used:null};
   coupons=[...coupons,c];LS.set('cp',coupons);return c;
+}
+function awardToday(){return awardFor(TODAY)}
+/* rattrapage : une journée passée devenue parfaite donne aussi sa photo et son gage */
+function sweepRewards(){
+  if(!photosReady)return;
+  Object.keys(days).filter(d=>d<TODAY&&isPerfect(d)).sort().forEach(d=>{photoFor(d);awardFor(d)});
 }
 const gageMsg=c=>'J\u2019ai gagné mon gage après '+c.mile+' jours parfaits, je l\u2019utilise : '+c.text+' \u2764\ufe0f';
 function renderCadeaux(){
@@ -855,7 +869,7 @@ async function pull(){
 pull();
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)pull()});
 
-function renderAll(){TODAY=key(new Date());renderToday();renderShop();renderSuivi()}
+function renderAll(){TODAY=key(new Date());sweepRewards();renderToday();renderShop();renderSuivi()}
 document.addEventListener('visibilitychange',()=>{if(!document.hidden&&key(new Date())!==TODAY)renderAll()});
 renderAll();
 try{const t=localStorage.getItem('andrea:tab');if(TABS.includes(t))show(t)}catch(e){}
